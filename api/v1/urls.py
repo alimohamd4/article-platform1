@@ -1,6 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from . import views_accounts, views_articles, views_categories, views_comments, views_reviews
+from . import views_notifications
 
 urlpatterns = [
     # Auth
@@ -32,4 +33,15 @@ urlpatterns = [
     # Categories
     path('categories/', views_categories.CategoryListView.as_view(), name='category_list'),
     path('categories/<slug:slug>/', views_categories.CategoryDetailView.as_view(), name='category_detail'),
+   #verify
+    path('auth/verify-email/<uidb64>/<token>/', views_accounts.VerifyEmailView.as_view(), name='verify_email'),
+    path('auth/resend-verification/', views_accounts.ResendVerificationView.as_view(), name='resend_verification'),
+    path('auth/forgot-password/', views_accounts.ForgotPasswordView.as_view(), name='forgot_password'),
+    path('auth/reset-password/<uidb64>/<token>/', views_accounts.ResetPasswordView.as_view(), name='reset_password'),
+
+    # Notifications
+path('notifications/', views_notifications.NotificationListView.as_view(), name='notification_list'),
+path('notifications/unread/', views_notifications.UnreadCountView.as_view(), name='unread_count'),
+path('notifications/mark-all-read/', views_notifications.NotificationMarkAllReadView.as_view(), name='mark_all_read'),
+path('notifications/<int:pk>/read/', views_notifications.NotificationMarkReadView.as_view(), name='mark_read'),
 ]

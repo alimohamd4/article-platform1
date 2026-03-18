@@ -18,11 +18,6 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('apps.articles.urls')),
-    path('accounts/', include('apps.accounts.urls')),
-    path('comments/', include('apps.comments.urls')),
-    path('reviews/', include('apps.reviews.urls')),
-    path('categories/', include('apps.categories.urls')),
 
     # API
     path('api/v1/', include('api.v1.urls')),
@@ -30,6 +25,15 @@ urlpatterns = [
     # Swagger
     path('api/docs/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger'),
     path('api/redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='redoc'),
+
+    # Web
+    path('accounts/', include('apps.accounts.urls')),
+    path('comments/', include('apps.comments.urls')),
+    path('reviews/', include('apps.reviews.urls')),
+    path('categories/', include('apps.categories.urls')),
+
+    # Articles آخر شيء لأنه يحتوي على slug عام
+    path('', include('apps.articles.urls')),
 ]
 
 if settings.DEBUG:

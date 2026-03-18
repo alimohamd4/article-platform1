@@ -3,8 +3,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.shortcuts import get_object_or_404
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
 from apps.accounts.models import User
 from apps.accounts.serializers import UserSerializer, RegisterSerializer
+from apps.accounts.tokens import email_verification_token, password_reset_token
+from apps.accounts.emails import send_verification_email, send_password_reset_email
 
 
 class RegisterView(generics.CreateAPIView):
@@ -16,13 +20,12 @@ class RegisterView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        refresh = RefreshToken.for_user(user)
+        user.is_active = False
+        user.save()
+        send_verification_email(user, request)
         return Response({
+            'message': 'Registration successful! Please check your email to verify your account.',
             'user': UserSerializer(user).data,
-            'tokens': {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }
         }, status=status.HTTP_201_CREATED)
 
 
@@ -65,3 +68,70 @@ class FollowView(APIView):
             return Response({'message': 'Unfollowed.'})
         user.followers.add(request.user)
         return Response({'message': 'Followed.'})
+
+
+class VerifyEmailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, uidb64, token):
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except Exception:
+            return Response({'error': 'Invalid link.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if email_verification_token.check_token(user, token):
+            user.is_active = True
+            user.save()
+            return Response({'message': 'Email verified successfully! You can now login.'})
+        return Response({'error': 'Link is invalid or expired.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ResendVerificationView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        if request.user.is_active:
+            return Response({'message': 'Email already verified.'})
+        send_verification_email(request.user, request)
+        return Response({'message': 'Verification email sent!'})
+
+
+class ForgotPasswordView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        try:
+            user = User.objects.get(email=email)
+            send_password_reset_email(user, request)
+        except User.DoesNotExist:
+            pass
+        return Response({'message': 'If this email exists, a reset link has been sent.'})
+
+
+class ResetPasswordView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, uidb64, token):
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except Exception:
+            return Response({'error': 'Invalid link.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not password_reset_token.check_token(user, token):
+            return Response({'error': 'Link is invalid or expired.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        password = request.data.get('password')
+        password2 = request.data.get('password2')
+
+        if not password or password != password2:
+            return Response({'error': 'Passwords do not match.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if len(password) < 8:
+            return Response({'error': 'Password must be at least 8 characters.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(password)
+        user.save()
+        return Response({'message': 'Password reset successfully!'})

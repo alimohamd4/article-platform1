@@ -35,6 +35,8 @@ INSTALLED_APPS = [
     'apps.search',
     'apps.categories',
     'apps.files',
+    'apps.notify',
+    'channels',
 ]
 
 SITE_ID = 1
@@ -151,4 +153,13 @@ SWAGGER_SETTINGS = {
         }
     },
     'USE_SESSION_AUTH': False,
+}
+
+DEFAULT_FROM_EMAIL = 'ScholarLink <noreply@scholarlink.com>'
+# Channels
+ASGI_APPLICATION = 'config.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer'
+    }
 }
