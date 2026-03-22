@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'apps.files',
     'apps.notify',
     'channels',
+    'apps.points',
 ]
 
 SITE_ID = 1

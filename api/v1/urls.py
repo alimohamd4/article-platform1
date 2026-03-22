@@ -4,6 +4,7 @@ from . import (
     views_accounts, views_articles, views_categories,
     views_comments, views_reviews, views_notifications, views_stats
 )
+from . import views_points
 
 urlpatterns = [
     # ─── المصادقة ───
@@ -57,4 +58,15 @@ urlpatterns = [
     path('stats/monthly-articles/', views_stats.MonthlyArticlesView.as_view(), name='monthly_articles'),
     path('stats/top-authors/', views_stats.TopAuthorsView.as_view(), name='top_authors'),
     path('stats/most-read/', views_stats.MostReadArticlesView.as_view(), name='most_read'),
+
+    # ─── المراجعات المتقدمة ───
+path('reviews/dashboard/', views_reviews.ReviewerDashboardView.as_view(), name='reviewer_dashboard'),
+path('reviews/<int:pk>/respond/', views_reviews.RespondToReviewRequestView.as_view(), name='respond_review'),
+path('reviews/<int:pk>/submit/', views_reviews.SubmitReviewView.as_view(), name='submit_review'),
+path('articles/<slug:slug>/assign-reviewer/', views_reviews.AssignReviewerView.as_view(), name='assign_reviewer'),
+
+# ─── النقاط والحوافز ───
+path('points/my/', views_points.MyPointsView.as_view(), name='my_points'),
+path('points/transactions/', views_points.MyTransactionsView.as_view(), name='my_transactions'),
+path('points/leaderboard/', views_points.LeaderboardView.as_view(), name='leaderboard'),
 ]

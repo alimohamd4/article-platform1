@@ -15,6 +15,7 @@ from apps.articles.serializers import (
 )
 from apps.articles.filters import ArticleFilter
 from apps.notify.utils import notify_like
+from apps.points.utils import award_points
 from common.permissions import IsAuthorOrReadOnly
 from common.pagination import StandardPagination
 
@@ -37,7 +38,12 @@ class ArticleListView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         status_value = self.request.data.get('status', 'draft')
         published_at = timezone.now() if status_value == 'published' else None
-        serializer.save(author=self.request.user, published_at=published_at)
+        article = serializer.save(
+            author=self.request.user,
+            published_at=published_at
+        )
+        if status_value == 'published':
+            award_points(self.request.user, 'publish_article')
 
 
 class ArticleDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -71,6 +77,7 @@ class ArticleLikeView(APIView):
         article.likes_count += 1
         article.save()
         notify_like(article, request.user)
+        award_points(article.author, 'receive_like')
         return Response({
             'message': 'Liked.',
             'likes_count': article.likes_count
@@ -132,6 +139,7 @@ class BookmarkView(APIView):
             article=article
         )
         if created:
+            award_points(article.author, 'receive_bookmark')
             return Response({'message': 'تمت الإضافة للمفضلة'})
         bookmark.delete()
         return Response({'message': 'تمت الإزالة من المفضلة'})

@@ -2,15 +2,19 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
+
 from apps.comments.models import Comment
 from apps.comments.serializers import CommentSerializer
 from apps.articles.models import Article
+from apps.points.utils import award_points
 from common.permissions import IsAuthorOrReadOnly
+from common.pagination import SmallPagination
 
 
 class CommentListView(generics.ListCreateAPIView):
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    pagination_class = SmallPagination
 
     def get_queryset(self):
         slug = self.kwargs['slug']
@@ -24,7 +28,12 @@ class CommentListView(generics.ListCreateAPIView):
         article = get_object_or_404(Article, slug=self.kwargs['slug'])
         parent_id = self.request.data.get('parent_id')
         parent = Comment.objects.filter(id=parent_id).first() if parent_id else None
-        serializer.save(author=self.request.user, article=article, parent=parent)
+        serializer.save(
+            author=self.request.user,
+            article=article,
+            parent=parent
+        )
+        award_points(article.author, 'receive_comment')
 
 
 class CommentDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -46,4 +55,3 @@ class CommentLikeView(APIView):
             comment.likes_count += 1
         comment.save()
         return Response({'likes_count': comment.likes_count})
-    
