@@ -1,10 +1,26 @@
+import os
 from pathlib import Path
 from datetime import timedelta
-from decouple import config
+
+try:
+    from decouple import config
+except ImportError:
+    def config(key, default=None, cast=None):
+        value = os.environ.get(key, default)
+        if value is None:
+            raise RuntimeError(
+                f"Missing required environment variable '{key}'. "
+                "Install python-decouple or set the variable in your environment."
+            )
+        if cast is not None:
+            if cast is bool:
+                return str(value).lower() in ('1', 'true', 'yes', 'on')
+            return cast(value)
+        return value
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-local-dev-key-change-me')
 
 INSTALLED_APPS = [
     # Django
@@ -73,16 +89,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
+DB_ENGINE = config('DB_ENGINE', default='django.db.backends.sqlite3')
+if DB_ENGINE == 'django.db.backends.sqlite3':
+    DATABASES = {
+        'default': {
+            'ENGINE': DB_ENGINE,
+            'NAME': config('DB_NAME', default=str(BASE_DIR / 'db.sqlite3')),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': DB_ENGINE,
+            'NAME': config('DB_NAME'),
+            'USER': config('DB_USER'),
+            'PASSWORD': config('DB_PASSWORD'),
+            'HOST': config('DB_HOST', default='localhost'),
+            'PORT': config('DB_PORT', default='5432'),
+        }
+    }
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',

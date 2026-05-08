@@ -34,7 +34,7 @@ urlpatterns = [
     path('articles/<slug:slug>/recommendations/', views_articles.RecommendationsView.as_view(), name='article_recommendations'),
     path('articles/<slug:slug>/comments/', views_comments.CommentListView.as_view(), name='comment_list'),
     path('articles/<slug:slug>/reviews/', views_reviews.ReviewListView.as_view(), name='review_list'),
-
+    path('admin/dashboard/', views_accounts.AdminDashboardView.as_view(), name='admin_dashboard'),
     # ─── التعليقات ───
     path('comments/<int:pk>/', views_comments.CommentDetailView.as_view(), name='comment_detail'),
     path('comments/<int:pk>/like/', views_comments.CommentLikeView.as_view(), name='comment_like'),

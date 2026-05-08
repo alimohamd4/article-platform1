@@ -5,10 +5,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.shortcuts import get_object_or_404
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
+from django.utils import timezone
 from apps.accounts.models import User
 from apps.accounts.serializers import UserSerializer, RegisterSerializer
 from apps.accounts.tokens import email_verification_token, password_reset_token
 from apps.accounts.emails import send_verification_email, send_password_reset_email
+from common.permissions import IsAdmin
 
 
 class RegisterView(generics.CreateAPIView):
@@ -135,3 +137,23 @@ class ResetPasswordView(APIView):
         user.set_password(password)
         user.save()
         return Response({'message': 'Password reset successfully!'})
+
+
+class AdminDashboardView(APIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request):
+        from apps.articles.models import Article
+        from apps.accounts.models import User
+        from apps.comments.models import Comment
+
+        return Response({
+            'total_users':    User.objects.count(),
+            'total_articles': Article.objects.count(),
+            'published':      Article.objects.filter(status='published').count(),
+            'under_review':   Article.objects.filter(status='under_review').count(),
+            'total_comments': Comment.objects.count(),
+            'new_users_today': User.objects.filter(
+                date_joined__date=timezone.now().date()
+            ).count(),
+        })

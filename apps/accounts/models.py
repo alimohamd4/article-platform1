@@ -40,6 +40,17 @@ class User(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
+    class Role(models.TextChoices):
+        USER = 'user', 'مستخدم عادي'
+        REVIEWER = 'reviewer', 'مراجع أكاديمي'
+        MODERATOR = 'moderator', 'مشرف محتوى'
+        ADMIN = 'admin', 'مسؤول'
+
+    role = models.CharField(
+        max_length=20,
+        choices=Role.choices,
+        default=Role.USER
+    )
     class Meta:
         verbose_name = 'User'
         verbose_name_plural = 'Users'
